@@ -1,580 +1,147 @@
-simpleeval (Simple Eval)
-========================
+simpleeval (Simple Eval) for Go
+===============================
 
-.. |build-status| image:: https://github.com/danthedeckie/simpleeval/actions/workflows/ci.yml/badge.svg?branch=main
-   :target: https://github.com/danthedeckie/simpleeval/actions/
-   :alt: Build Status
+A library for easily adding evaluatable expressions into Go programs: a Go
+port of the Python ``simpleeval`` library (version 1.0.8). Say you want to
+allow a user to set an alarm volume, which could depend on the time of day,
+alarm level, how many previous alarms had gone off, and if there is music
+playing at the time. Or you want to allow simple formulae in a web
+application, without giving away a whole interpreter.
 
-.. |code-coverage| image:: https://codecov.io/gh/danthedeckie/simpleeval/branch/main/graph/badge.svg?token=isRnN1yrca
-   :target: https://codecov.io/gh/danthedeckie/simpleeval
-   :alt: Code Coverage Status
+Expressions are Python 3.12 expressions. They are parsed the way CPython's
+``ast.parse`` parses them and evaluated node by node with Python's semantics:
+Python's numbers (ints of any size, floats, complex numbers), strings, bytes,
+lists, tuples, dicts and sets, their operators and methods, string formatting,
+and the exact exception every operation raises. Only the operators, functions
+and names an evaluator is given are available, so it should be safe in terms
+of what operations an expression can perform.
 
-.. |pypi-version| image:: https://img.shields.io/pypi/v/simpleeval
-   :target: https://badge.fury.io/py/simpleeval
-   :alt: PyPI - Version
+The one issue to be aware of is that an expression can take a long time to
+evaluate, or need a lot of memory, which leaves the potential for denial of
+service. There is basic protection against this (see Limits_ below), and you
+can lock it down further. Be aware of this when deploying in a public setting.
 
-.. |python-versions| image:: https://img.shields.io/badge/python-3.9_%7C_3.10_%7C_3.11_%7C_3.12_%7C_3.13_%7C_3.14_%7C_3.15_%7C_PyPy3.9_%7C_PyPy3.10_%7C_PyPy3.11-blue
-   :alt: Static Badge
+The module has no dependencies.
 
-.. |pypi-monthly-downloads| image:: https://img.shields.io/pypi/dm/SimpleEval
-   :alt: PyPI - Downloads
-
-.. |formatting-with-ruff| image:: https://img.shields.io/badge/-ruff-black?logo=lightning&logoColor=%2300ff00&link=https%3A%2F%2Fdocs.astral.sh%2Fruff%2F
-   :alt: Static Badge
-
-|build-status| |code-coverage| |pypi-version| |python-versions| |pypi-monthly-downloads| |formatting-with-ruff|
-
-
-A single file library for easily adding evaluatable expressions into
-python projects.  Say you want to allow a user to set an alarm volume, which
-could depend on the time of day, alarm level, how many previous alarms had gone
-off, and if there is music playing at the time.
-
-Or if you want to allow simple formulae in a web application, but don't want to
-give full eval() access, or don't want to run in javascript on the client side.
-
-It's deliberately trying to stay simple to use and not have millions of features,
-pull it in from PyPI (pip or easy_install), or even just a single file you can dump
-into a project.
-
-Internally, it's using the amazing python ``ast`` module to parse the
-expression, which allows very fine control of what is and isn't allowed.  It
-should be completely safe in terms of what operations can be performed by the
-expression.
-
-The only issue I know to be aware of is that you can create an expression which
-takes a long time to evaluate, or which evaluating requires an awful lot of
-memory, which leaves the potential for DOS attacks.  There is basic protection
-against this, and you can lock it down further if you desire. (see the
-Operators_ section below)
-
-You should be aware of this when deploying in a public setting.
-
-The defaults are pretty locked down and basic, and it's easy to add
-whatever extra specific functionality you need (your own functions,
-variable/name lookup, etc).
-
-Basic Usage
+Basic usage
 -----------
 
-To get very simple evaluating:
+.. code-block:: go
 
-.. code-block:: python
+    import "github.com/danthedeckie/simpleeval"
 
-    from simpleeval import simple_eval
+    v, err := simpleeval.Eval("21 + 21", nil, nil, nil, nil)
+    s, _ := simpleeval.Repr(v) // "42"
 
-    simple_eval("21 + 21")
-
-returns ``42``.
+``Eval(expr, operators, functions, names, allowedAttrs)`` is the original's
+``simple_eval``: a nil argument means the default. Every error that stands for
+a Python exception is a ``*simpleeval.Error`` with the exception's ``Class``
+(such as ``"NameNotDefined"`` or ``"ZeroDivisionError"``) and ``Message``.
 
 Expressions can be as complex and convoluted as you want:
 
-.. code-block:: python
+.. code-block:: go
 
-    simple_eval("21 + 19 / 7 + (8 % 3) ** 9")
+    simpleeval.Eval("21 + 19 / 7 + (8 % 3) ** 9", nil, nil, nil, nil) // 535.7142857142857
 
-returns ``535.714285714``.
+Values
+------
 
-You can add your own functions in as well.
+Values are Python values (``simpleeval.Value``). Build the values you hand in
+with ``None``, ``Bool``, ``Int``, ``BigInt``, ``Float``, ``Complex``,
+``String``, ``Bytes``, ``List``, ``Tuple``, ``Set``, ``FrozenSet`` and
+``Dict``; ``Builtin("len")`` is a Python builtin and ``Module("math")`` a
+standard-library module. ``Repr``, ``Str``, ``GetAttr``, ``GetItem``,
+``SetItem`` and ``Call`` are Python's operations on them.
 
-.. code-block:: python
+Names and functions
+-------------------
 
-    simple_eval("square(11)", functions={"square": lambda x: x*x})
+.. code-block:: go
 
-returns ``121``.
+    names, _ := simpleeval.Dict(simpleeval.String("two"), simpleeval.Int(2))
+    simpleeval.Eval("40 + two", nil, nil, names, nil) // 42
 
-For more details of working with functions, read further down.
+    magnitude := simpleeval.Func("magnitude", func(args []simpleeval.Value, kw []simpleeval.Keyword) (simpleeval.Value, error) {
+        return simpleeval.Call(simpleeval.Builtin("abs"), args, nil)
+    })
+    functions := simpleeval.DefaultFunctions()
+    simpleeval.SetItem(functions, simpleeval.String("magnitude"), magnitude)
+    simpleeval.Eval("magnitude(-3) + 1", nil, functions, nil, nil) // 4
 
-Note:
-~~~~~
-all further examples use ``>>>`` to designate python code, as if you are using
-the python interactive prompt.
+The names may also be a function, called with the ``ast.Name`` node of each
+name the expression uses; it returns ``NewNameNotDefined(name, expression)``
+for a name it does not know, and the evaluator then looks the name up among
+its functions.
 
-.. _Operators:
+The default functions are ``rand``, ``randint``, ``int``, ``float`` and
+``str``; the default names are ``True``, ``False`` and ``None``.
+
+Evaluators
+----------
+
+``NewSimpleEval(operators, functions, names, allowedAttrs)`` makes an
+evaluator you can keep and reuse; its ``Operators``, ``Functions``, ``Names``,
+``AllowedAttrs``, ``AttrIndexFallback`` and ``Expr`` fields can be changed
+between evaluations. ``Parse`` parses an expression once, and ``EvalParsed``
+evaluates the parsed node again.
+
+``NewEvalWithCompoundTypes`` adds list, tuple, dict and set displays, the
+``list``, ``tuple``, ``dict`` and ``set`` functions, list and dict
+comprehensions and generator expressions (evaluated to lists).
 
 Operators
 ---------
-You can add operators yourself, using the ``operators`` argument, but these are
-the defaults:
 
-+--------+------------------------------------+
-|  ``+`` | add two things. ``x + y``          |
-|        | ``1 + 1`` -> ``2``                 |
-+--------+------------------------------------+
-|  ``-`` | subtract two things ``x - y``      |
-|        | ``100 - 1`` -> ``99``              |
-+--------+------------------------------------+
-|  ``/`` | divide one thing by another        |
-|        | ``x / y``                          |
-|        | ``100/10`` -> ``10``               |
-+--------+------------------------------------+
-|  ``*`` | multiple one thing by another      |
-|        | ``x * y``                          |
-|        | ``10 * 10`` -> ``100``             |
-+--------+------------------------------------+
-| ``**`` | 'to the power of' ``x**y``         |
-|        | ``2 ** 10`` -> ``1024``            |
-+--------+------------------------------------+
-| ``%``  | modulus. (remainder)  ``x % y``    |
-|        | ``15 % 4`` -> ``3``                |
-+--------+------------------------------------+
-| ``==`` | equals  ``x == y``                 |
-|        | ``15 == 4`` -> ``False``           |
-+--------+------------------------------------+
-| ``<``  | Less than. ``x < y``               |
-|        | ``1 < 4`` -> ``True``              |
-+--------+------------------------------------+
-| ``>``  | Greater than. ``x > y``            |
-|        | ``1 > 4`` -> ``False``             |
-+--------+------------------------------------+
-| ``<=`` | Less than or Equal to. ``x <= y``  |
-|        | ``1 < 4`` -> ``True``              |
-+--------+------------------------------------+
-| ``>=`` | Greater or Equal to ``x >= 21``    |
-|        | ``1 >= 4`` -> ``False``            |
-+--------+------------------------------------+
-| ``>>`` | "Right shift" the number.          |
-|        | ``100 >> 2`` -> ``25``             |
-+--------+------------------------------------+
-| ``<<`` | "Left shift" the number.           |
-|        | ``100 << 2`` -> ``400``            |
-+--------+------------------------------------+
-| ``in`` | is something contained within      |
-|        | something else.                    |
-|        | ``"spam" in "my breakfast"``       |
-|        | -> ``False``                       |
-+--------+------------------------------------+
-| ``^``  | "bitwise exclusive OR" (xor)       |
-|        | ``62 ^ 20`` -> ``42``              |
-+--------+------------------------------------+
-| ``|``  | "bitwise OR"                       |
-|        | ``8 | 34`` -> ``42``               |
-+--------+------------------------------------+
-| ``&``  | "bitwise AND"                      |
-|        | ``100 & 63`` -> ``36``             |
-+--------+------------------------------------+
-| ``~``  | "bitwise invert"                   |
-|        | ``~ -43`` -> ``42``                |
-+--------+------------------------------------+
+``DefaultOperators()`` maps the class name of each operator node (``Add``,
+``USub``, ``Eq``, ``In``, ...) to the function that applies it. ``+``, ``*``,
+``**``, ``<<`` and ``>>`` use guarded functions that refuse results that would
+be too large. Remove an operator from the map to disallow it, or replace its
+function.
 
-
-The ``^`` operator is often mistaken for a exponent operator, not the bitwise 
-operation that it is in python, so if you want ``3 ^ 2`` to equal ``9``, you can
-replace the operator like this:
-
-.. code-block:: pycon
-
-    >>> import ast
-    >>> from simpleeval import safe_power
-
-    >>> s = SimpleEval()
-    >>> s.operators[ast.BitXor] = safe_power
-
-    >>> s.eval("3 ^ 2")
-    9
-
-for example.
-
-Limited Power
-~~~~~~~~~~~~~
-
-Also note, the ``**`` operator has been locked down by default to have a
-maximum input value of ``4000000``, which makes it somewhat harder to make
-expressions which go on for ever.  You can change this limit by changing the
-``simpleeval.MAX_POWER`` module level value to whatever is an appropriate value
-for you (and the hardware that you're running on) or if you want to completely
-remove all limitations, you can set the ``s.operators[ast.Pow] = operator.pow``
-or make your own function.
-
-On my computer, ``9**9**5`` evaluates almost instantly, but ``9**9**6`` takes
-over 30 seconds.  Since ``9**7`` is ``4782969``, and so over the ``MAX_POWER``
-limit, it throws a ``NumberTooHigh`` exception for you. (Otherwise it would go
-on for hours, or until the computer runs out of memory)
-
-Strings (and other Iterables) Safety
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-There are also limits on string length (100000 characters,
-``MAX_STRING_LENGTH``).  This can be changed if you wish.
-
-Related to this, if you try to create a silly long string/bytes/list, by doing
-``'i want to break free'.split() * 9999999999`` for instance, it will block you.
-
-If Expressions
---------------
-
-You can use python style ``if x then y else z`` type expressions:
-
-.. code-block:: pycon
-
-    >>> simple_eval("'equal' if x == y else 'not equal'",
-                    names={"x": 1, "y": 2})
-    'not equal'
-
-which, of course, can be nested:
-
-.. code-block:: pycon
-
-    >>> simple_eval("'a' if 1 == 2 else 'b' if 2 == 3 else 'c'")
-    'c'
-
-
-Functions
----------
-
-You can define functions which you'd like the expressions to have access to:
-
-.. code-block:: pycon
-
-    >>> simple_eval("double(21)", functions={"double": lambda x:x*2})
-    42
-
-You can define "real" functions to pass in rather than lambdas, of course too,
-and even re-name them so that expressions can be shorter
-
-.. code-block:: pycon
-
-    >>> def double(x):
-            return x * 2
-    >>> simple_eval("d(100) + double(1)", functions={"d": double, "double":double})
-    202
-
-If you don't provide your own ``functions`` dict, then the the following defaults
-are provided in the ``DEFAULT_FUNCTIONS`` dict:
-
-+----------------+--------------------------------------------------+
-| ``randint(x)`` | Return a random ``int`` below ``x``              |
-+----------------+--------------------------------------------------+
-| ``rand()``     | Return a random ``float`` between 0 and 1        |
-+----------------+--------------------------------------------------+
-| ``int(x)``     | Convert ``x`` to an ``int``.                     |
-+----------------+--------------------------------------------------+
-| ``float(x)``   | Convert ``x`` to a ``float``.                    |
-+----------------+--------------------------------------------------+
-| ``str(x)``     | Convert ``x`` to a ``str``                       |
-+----------------+--------------------------------------------------+
-
-If you want to provide a list of functions, but want to keep these as well,
-then you can do a normal python ``.copy()`` & ``.update``:
-
-.. code-block:: pycon
-
-    >>> my_functions = simpleeval.DEFAULT_FUNCTIONS.copy()
-    >>> my_functions.update(
-            square=(lambda x:x*x),
-            double=(lambda x:x+x),
-        )
-    >>> simple_eval('square(randint(100))', functions=my_functions)
-
-Names
------
-
-Sometimes it's useful to have variables available, which in python terminology
-are called 'names'.
-
-.. code-block:: pycon
-
-    >>> simple_eval("a + b", names={"a": 11, "b": 100})
-    111
-
-You can also hand the handling of names over to a function, if you prefer:
-
-
-.. code-block:: pycon
-
-    >>> def name_handler(node):
-            return ord(node.id[0].lower(a))-96
-
-    >>> simple_eval('a + b', names=name_handler)
-    3
-
-That was a bit of a silly example, but you could use this for pulling values
-from a database or file, looking up spreadsheet cells, say, or doing some kind of caching system.
-
-In general, when it attempts to find a variable by name, if it cannot find one,
-then it will look in the ``functions`` for a function of that name.  If you want your name handler
-function to return an "I can't find that name!", then it should raise a ``simpleeval.NameNotDefined`` 
-exception. Eg:
-
-.. code-block:: pycon
-
-   >>> def name_handler(node):
-   ...     if node.id[0] == 'a':
-   ...         return 21
-   ...     raise NameNotDefined(node.id[0], "Not found")
-   ...
-   ... simple_eval('a + a', names=name_handler, functions={"b": 100})
-
-   42
-
-   >>> simple_eval('a + b', names=name_handler, functions={'b': 100})
-   121
-
-(Note: in that example, putting a number directly into the ``functions`` dict was done just to
-show the fall-back to functions.  Normally only put actual callables in there.)
-
-
-The two default names that are provided are ``True`` and ``False``.  So if you want to provide
-your own names, but want ``True`` and ``False`` to keep working, either provide them yourself,
-or ``.copy()`` and ``.update`` the ``DEFAULT_NAMES``. (See functions example above).
-
-Creating an Evaluator Class
----------------------------
-
-Rather than creating a new evaluator each time, if you are doing a lot of
-evaluations, you can create a SimpleEval object, and pass it expressions each
-time (which should be a bit quicker, and certainly more convenient for some use
-cases):
-
-.. code-block:: pycon
-
-    >>> s = SimpleEval()
-
-    >>> s.eval("1 + 1")
-    2
-
-    >>> s.eval('100 * 10')
-    1000
-
-    # and so on...
-
-One useful feature of using the ``SimpleEval`` object is that you can parse an expression
-once, and then evaluate it multiple times using different ``names``:
-
-.. code-block:: python
-
-    # Set up & Cache the parse tree:
-    expression = "foo + bar"
-    parsed = s.parse(expression)
-
-    # evaluate the expression multiple times:
-    for names in [{"foo": 1, "bar": 10}, {"foo": 100, "bar": 42}]:
-        s.names = names
-        print(s.eval(expression, previously_parsed=parsed))
-
-for instance.  This may help with performance.
-
-You can assign / edit the various options of the ``SimpleEval`` object if you
-want to.  Either assign them during creation (like the ``simple_eval``
-function)
-
-.. code-block:: python
-
-    def boo():
-        return 'Boo!'
-
-    s = SimpleEval(functions={"boo": boo})
-
-or edit them after creation:
-
-.. code-block:: python
-
-    s.names['fortytwo'] = 42
-
-this actually means you can modify names (or functions) with functions, if you
-really feel so inclined:
-
-.. code-block:: python
-
-    s = SimpleEval()
-    def set_val(name, value):
-        s.names[name.value] = value.value
-        return value.value
-
-    s.functions = {'set': set_val}
-
-    s.eval("set('age', 111)")
-
-Say.  This would allow a certain level of 'scriptyness' if you had these
-evaluations happening as callbacks in a program.  Although you really are
-reaching the end of what this library is intended for at this stage.
-
-Compound Types
---------------
-
-Compound types (``dict``, ``tuple``, ``list``, ``set``) in general just work if
-you pass them in as named objects.  If you want to allow creation of these, the
-``EvalWithCompoundTypes`` class works.  Just replace any use of ``SimpleEval`` with
-that.
-
-The ``EvalWithCompoundTypes`` class also contains support for simple comprehensions.
-eg: ``[x + 1 for x in [1,2,3]]``.  There's a safety `MAX_COMPREHENSION_LENGTH` to control
-how many items it'll allow before bailing too.  This also takes into account nested
-comprehensions.
-
-Since the primary intention of this library is short expressions - an extra 'sweetener' is
-enabled by default.  You can access a dict (or similar's) keys using the .attr syntax:
-
-.. code-block:: pycon
-
-    >>>  simple_eval("foo.bar", names={"foo": {"bar": 42}})
-    42
-
-for instance.  You can turn this off either by setting the module global `ATTR_INDEX_FALLBACK`
-to `False`, or on the ``SimpleEval`` instance itself. e.g. ``evaller.ATTR_INDEX_FALLBACK=False``.
-
-Extending
----------
-
-The ``SimpleEval`` class is pretty easy to extend.  For instance, to create a
-version that disallows method invocation on objects:
-
-.. code-block:: python
-
-    import ast
-    import simpleeval
-
-    class EvalNoMethods(simpleeval.SimpleEval):
-        def _eval_call(self, node):
-            if isinstance(node.func, ast.Attribute):
-                raise simpleeval.FeatureNotAvailable("No methods please, we're British")
-            return super(EvalNoMethods, self)._eval_call(node)
-
-and then use ``EvalNoMethods`` instead of the ``SimpleEval`` class.
-
-Limiting Attribute Access
--------------------------
-
-Object attributes that start with ``_`` or ``func_`` are disallowed by default.
-If you really need that (BE CAREFUL!), then modify the module global
-``simpleeval.DISALLOW_PREFIXES``.
-
-A few builtin functions are listed in ``simpleeval.DISALLOW_FUNCTIONS``.  ``type``, ``open``, etc.
-If you need to give access to this kind of functionality to your expressions, then be very
-careful.  You'd be better wrapping the functions in your own safe wrappers.
-
-Accessing modules as attributes is disallowed too.
-
-Allowlist recommendation
-------------------------
-
-There is an additional layer of protection you can add in by passing in ``allowed_attrs``, which
-makes all attribute access based opt-in rather than opt-out - which is a lot safer design:
-
-.. code-block:: pycon
-
-    >>> simpleeval("' hello   '.strip()", allowed_attrs={})
-
-will throw FeatureNotAvailable - as we've now disabled all attribute access.  You can enable some
-reasonably sensible defaults with BASIC_ALLOWED_ATTRS:
-
-.. code-block:: pycon
-
-    >>> from simpleeval import simpleeval, BASIC_ALLOWED_ATTRS
-    >>> simpleeval("'  hello   '.strip()", allowed_attrs=BASIC_ALLOWED_ATTRS)
-
-is fine - ``strip()`` should be safe on strings.
-
-It is strongly recommended to add ``allowed_attrs=BASIC_ALLOWED_ATTRS``  whenever possible,
-and it will be the default for 2.x.
-
-You can add your own classes & limit access to attrs:
-
-.. code-block:: pycon
-
-    >>> from simpleeval import simpleeval, BASIC_ALLOWED_ATTRS
-    >>> class Foo:
-    >>>     bar = 42
-    >>>     hidden = "secret"
-    >>>
-    >>> our_attributes = BASIC_ALLOWED_ATTRS.copy()
-    >>> our_attributes[Foo] = {'bar'}
-    >>> simpleeval("foo.bar", names={"foo": Foo()}, allowed_attrs=our_attributes)
-    42
-
-    >>> simpleeval("foo.hidden", names={"foo": Foo()}, allowed_attrs=our_attributes)
-    simpleeval.FeatureNotAvailable: Sorry, 'hidden' access not allowed on 'Foo'
-
-will now allow access to `foo.bar` but not allow anything else.
-
-Module Access
--------------
-
-By default, module access is not allowed in simpleeval to prevent accidental or
-malicious access to dangerous functions. However, if you need to expose modules,
-(eg. `numpy` or similar) you can use ``ModuleWrapper`` to do so safely.
-
-``ModuleWrapper`` allows explicit opt-in to module access while still enforcing
-restrictions on dangerous methods and private attributes:
-
-.. code-block:: pycon
-
-    >>> from simpleeval import SimpleEval, ModuleWrapper
-    >>> import os.path
-    >>> s = SimpleEval(names={'path': ModuleWrapper(os.path)})
-    >>> s.eval("path.exists('/etc/passwd')")
-    True
-
-You can also restrict which attributes are accessible by passing an
-``allowed_attrs`` set:
-
-.. code-block:: pycon
-
-    >>> s = SimpleEval(names={
-    ...     'path': ModuleWrapper(os.path, allowed_attrs={'exists', 'join'})
-    ... })
-    >>> s.eval("path.exists('/etc/passwd')")
-    True
-    >>> s.eval("path.dirname('/etc/passwd')")  # Not in allowed_attrs
-    simpleeval.FeatureNotAvailable: Access to 'dirname' is not allowed...
-
-Private attributes (starting with ``_``) and methods in ``DISALLOW_METHODS``
-are always blocked, even if not using an allowlist:
-
-.. code-block:: pycon
-
-    >>> s = SimpleEval(names={'path': ModuleWrapper(os.path)})
-    >>> s.eval("path.__file__")
-    simpleeval.FeatureNotAvailable: Access to private attribute '__file__'...
-
-If you really really need that - you can make your own wrappers and overrides.
-But I advise against it.
-
-Other...
---------
-
-The library supports Python 3.9 and higher.
-
-The initial idea came from J.F. Sebastian on Stack Overflow
-( http://stackoverflow.com/a/9558001/1973500 ) with modifications and many improvements,
-see the head of the main file for contributors list.
-
-Please read the ``tests/`` for other potential gotchas or
-details.  I'm very happy to accept pull requests, suggestions, or other issues.
-Enjoy!
-
-Developing
-----------
-
-Run tests::
-
-    $ make test
-
-Or to set the tests running on every file change:
-
-    $ make autotest
-
-(requires ``entr``) 
-
-I'm trying to keep the codebase relatively clean with ruff, & mypy.
-See::
-
-    $ make format
-
-and::
-
-    $ make lint
-
-You can run tests against python versions 3.9-3.14 via `tox` (if you have them installed)
-
-BEWARE
+Limits
 ------
 
-I've done the best I can with this library - but there's no warranty, no guarantee, nada.  A lot of
-very clever people think the whole idea of trying to sandbox CPython is impossible.  Read the code
-yourself, and use it at your own risk.
+The package variables ``MaxStringLength``, ``MaxComprehensionLength``,
+``MaxPower``, ``MaxShift`` and ``MaxShiftBase`` bound string literals and
+sequence arithmetic, comprehension results, the operands of ``**`` and of the
+shifts. They are read whenever they are checked, so changing one affects every
+evaluator.
 
-The sandboxing / safety features of simpleeval *only apply to the expression* that is passed in to
-be evaluated, and rely on the python interpreter working as normal.  If you have monkey-patched
-the interpreter, or pass in objects/classes/functions with unsafe code in them, simpleeval cannot
-protect you.
+Attributes
+----------
+
+Attributes starting with ``_`` or ``func_`` (``DisallowPrefixes``) and the
+methods in ``DisallowMethods`` are never reachable. An attribute that does not
+exist falls back to an item of the same name (``d.key`` for ``d["key"]``)
+unless ``AttrIndexFallback`` is false. An evaluator given ``AllowedAttrs``
+(``BasicAllowedAttrs`` is a sensible start) lets expressions reach only the
+listed attributes of the listed types.
+
+Modules are refused; ``NewModuleWrapper(module, allowedAttrs)`` exposes one
+explicitly, still refusing private names and the disallowed methods.
+
+The functions in ``DisallowFunctions`` (``eval``, ``exec``, ``type``,
+``getattr``, ``open``, the ``os`` functions that run programs, ...) are
+refused wherever they appear.
+
+Warnings
+--------
+
+Assignments are evaluated for their value with an ``AssignmentAttempted``
+warning, and only the first of several statements is evaluated, with a
+``MultipleExpressions`` warning. ``CatchWarnings`` records the warnings issued
+while a function runs.
+
+Credits
+-------
+
+simpleeval was written by Daniel Fairhead, with contributions from many
+people (see the original project's contributors list). This port follows its
+behaviour, and that of CPython 3.12, as closely as it can.
+
+Licence
+-------
+
+MIT, see ``LICENCE``. Parts of the library are ported from CPython and carry
+the Python Software Foundation's licence notice in their source files.

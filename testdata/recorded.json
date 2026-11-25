@@ -1,0 +1,722 @@
+[
+ {
+  "expr": "21 + 21",
+  "simple": false,
+  "outcome": "= 42",
+  "warnings": []
+ },
+ {
+  "expr": "21 + 19 / 7 + (8 % 3) ** 9",
+  "simple": false,
+  "outcome": "= 535.7142857142857",
+  "warnings": []
+ },
+ {
+  "expr": "7 // -2",
+  "simple": false,
+  "outcome": "= -4",
+  "warnings": []
+ },
+ {
+  "expr": "-7 % 3",
+  "simple": false,
+  "outcome": "= 2",
+  "warnings": []
+ },
+ {
+  "expr": "2 ** 100",
+  "simple": false,
+  "outcome": "= 1267650600228229401496703205376",
+  "warnings": []
+ },
+ {
+  "expr": "2 ** -2",
+  "simple": false,
+  "outcome": "= 0.25",
+  "warnings": []
+ },
+ {
+  "expr": "(-8) ** (1 / 3)",
+  "simple": false,
+  "outcome": "= (1.0000000000000002+1.7320508075688772j)",
+  "warnings": []
+ },
+ {
+  "expr": "0.1 + 0.2",
+  "simple": false,
+  "outcome": "= 0.30000000000000004",
+  "warnings": []
+ },
+ {
+  "expr": "1e16",
+  "simple": false,
+  "outcome": "= 1e+16",
+  "warnings": []
+ },
+ {
+  "expr": "1e-5",
+  "simple": false,
+  "outcome": "= 1e-05",
+  "warnings": []
+ },
+ {
+  "expr": "10 / 4",
+  "simple": false,
+  "outcome": "= 2.5",
+  "warnings": []
+ },
+ {
+  "expr": "1 / 0",
+  "simple": false,
+  "outcome": "! ZeroDivisionError: division by zero",
+  "warnings": []
+ },
+ {
+  "expr": "1 % 0",
+  "simple": false,
+  "outcome": "! ZeroDivisionError: integer modulo by zero",
+  "warnings": []
+ },
+ {
+  "expr": "1.0 // 0",
+  "simple": false,
+  "outcome": "! ZeroDivisionError: float floor division by zero",
+  "warnings": []
+ },
+ {
+  "expr": "3 * 1j ** 2",
+  "simple": false,
+  "outcome": "= (-3+0j)",
+  "warnings": []
+ },
+ {
+  "expr": "~5",
+  "simple": false,
+  "outcome": "= -6",
+  "warnings": []
+ },
+ {
+  "expr": "5 & 3 | 8 ^ 2",
+  "simple": false,
+  "outcome": "= 11",
+  "warnings": []
+ },
+ {
+  "expr": "1 << 10",
+  "simple": false,
+  "outcome": "= 1024",
+  "warnings": []
+ },
+ {
+  "expr": "1 << 10001",
+  "simple": false,
+  "outcome": "! NumberTooHigh: Sorry! I don't want to evaluate 1 << 10001",
+  "warnings": []
+ },
+ {
+  "expr": "2 ** 4000001",
+  "simple": false,
+  "outcome": "! NumberTooHigh: Sorry! I don't want to evaluate 2 ** 4000001",
+  "warnings": []
+ },
+ {
+  "expr": "1e300 ** 2",
+  "simple": false,
+  "outcome": "! NumberTooHigh: Sorry! I don't want to evaluate 1e+300 ** 2",
+  "warnings": []
+ },
+ {
+  "expr": "10 ** 4300",
+  "simple": false,
+  "outcome": "! ValueError: Exceeds the limit (4300 digits) for integer string conversion; use sys.set_int_max_str_digits() to increase the limit",
+  "warnings": []
+ },
+ {
+  "expr": "int(\"0x1f\", 0)",
+  "simple": false,
+  "outcome": "= 31",
+  "warnings": []
+ },
+ {
+  "expr": "float(\" -inf \")",
+  "simple": false,
+  "outcome": "= -inf",
+  "warnings": []
+ },
+ {
+  "expr": "int(\"12abc\")",
+  "simple": false,
+  "outcome": "! ValueError: invalid literal for int() with base 10: '12abc'",
+  "warnings": []
+ },
+ {
+  "expr": "float(\"1e\")",
+  "simple": false,
+  "outcome": "! ValueError: could not convert string to float: '1e'",
+  "warnings": []
+ },
+ {
+  "expr": "str(1e16)",
+  "simple": false,
+  "outcome": "= '1e+16'",
+  "warnings": []
+ },
+ {
+  "expr": "(255).to_bytes(2, \"little\")",
+  "simple": false,
+  "outcome": "= b'\\xff\\x00'",
+  "warnings": []
+ },
+ {
+  "expr": "float.fromhex(\"0x1.8p1\")",
+  "simple": false,
+  "outcome": "= 3.0",
+  "warnings": []
+ },
+ {
+  "expr": "(0.1).hex()",
+  "simple": false,
+  "outcome": "= '0x1.999999999999ap-4'",
+  "warnings": []
+ },
+ {
+  "expr": "(2.5).as_integer_ratio()",
+  "simple": false,
+  "outcome": "= (5, 2)",
+  "warnings": []
+ },
+ {
+  "expr": "(-5).bit_count()",
+  "simple": false,
+  "outcome": "= 2",
+  "warnings": []
+ },
+ {
+  "expr": "int.from_bytes(b\"\\x01\\x00\", \"big\")",
+  "simple": false,
+  "outcome": "= 256",
+  "warnings": []
+ },
+ {
+  "expr": "\"abc\" + \"def\"",
+  "simple": false,
+  "outcome": "= 'abcdef'",
+  "warnings": []
+ },
+ {
+  "expr": "\"ab\" * 3",
+  "simple": false,
+  "outcome": "= 'ababab'",
+  "warnings": []
+ },
+ {
+  "expr": "\"ab\" * \"cd\"",
+  "simple": false,
+  "outcome": "! TypeError: '>' not supported between instances of 'str' and 'int'",
+  "warnings": []
+ },
+ {
+  "expr": "\"ß\".upper()",
+  "simple": false,
+  "outcome": "= 'SS'",
+  "warnings": []
+ },
+ {
+  "expr": "\"ǅ\".title()",
+  "simple": false,
+  "outcome": "= 'ǅ'",
+  "warnings": []
+ },
+ {
+  "expr": "\"a b  c\".split()",
+  "simple": false,
+  "outcome": "= ['a', 'b', 'c']",
+  "warnings": []
+ },
+ {
+  "expr": "\"x\\ty\".expandtabs(4)",
+  "simple": false,
+  "outcome": "= 'x   y'",
+  "warnings": []
+ },
+ {
+  "expr": "\"-42\".zfill(6)",
+  "simple": false,
+  "outcome": "= '-00042'",
+  "warnings": []
+ },
+ {
+  "expr": "\"abc\".translate(str.maketrans(\"ab\", \"xy\"))",
+  "simple": false,
+  "outcome": "= 'xyc'",
+  "warnings": []
+ },
+ {
+  "expr": "\"%5.2f|%-4d|%r\" % (3.14159, 7, \"x\")",
+  "simple": false,
+  "outcome": "= \" 3.14|7   |'x'\"",
+  "warnings": []
+ },
+ {
+  "expr": "b\"%s-%d\" % (b\"x\", 5)",
+  "simple": false,
+  "outcome": "= b'x-5'",
+  "warnings": []
+ },
+ {
+  "expr": "f\"{12345.678:,.2f}\"",
+  "simple": false,
+  "outcome": "= '12,345.68'",
+  "warnings": []
+ },
+ {
+  "expr": "f\"{255:#x}\"",
+  "simple": false,
+  "outcome": "= '0xff'",
+  "warnings": []
+ },
+ {
+  "expr": "f\"{1!r:>4}\"",
+  "simple": false,
+  "outcome": "= '   1'",
+  "warnings": []
+ },
+ {
+  "expr": "f\"{'a'=}\"",
+  "simple": false,
+  "outcome": "= \"'a'=a\"",
+  "warnings": []
+ },
+ {
+  "expr": "f\"{3:{'}'}}\"",
+  "simple": false,
+  "outcome": "! ValueError: Single '}' encountered in format string",
+  "warnings": []
+ },
+ {
+  "expr": "\"{:>5}\".format(1)",
+  "simple": false,
+  "outcome": "! FeatureNotAvailable: Sorry, this method is not available. (format)",
+  "warnings": []
+ },
+ {
+  "expr": "\"abc\"[::-1]",
+  "simple": true,
+  "outcome": "= 'cba'",
+  "warnings": []
+ },
+ {
+  "expr": "\"abc\"[5]",
+  "simple": false,
+  "outcome": "! IndexError: string index out of range",
+  "warnings": []
+ },
+ {
+  "expr": "\"\\d\"",
+  "simple": false,
+  "outcome": "= '\\\\d'",
+  "warnings": [
+   "SyntaxWarning: invalid escape sequence '\\d'"
+  ]
+ },
+ {
+  "expr": "\"\\N{EM DASH}\"",
+  "simple": false,
+  "outcome": "= '—'",
+  "warnings": []
+ },
+ {
+  "expr": "1 < 2 < 3",
+  "simple": true,
+  "outcome": "= True",
+  "warnings": []
+ },
+ {
+  "expr": "1 < \"a\"",
+  "simple": false,
+  "outcome": "! TypeError: '<' not supported between instances of 'int' and 'str'",
+  "warnings": []
+ },
+ {
+  "expr": "[1, 2] < [1, 3]",
+  "simple": false,
+  "outcome": "= True",
+  "warnings": []
+ },
+ {
+  "expr": "1 == 1.0 == True",
+  "simple": false,
+  "outcome": "= True",
+  "warnings": []
+ },
+ {
+  "expr": "\"a\" in \"abc\"",
+  "simple": false,
+  "outcome": "= True",
+  "warnings": []
+ },
+ {
+  "expr": "1 in \"abc\"",
+  "simple": false,
+  "outcome": "! TypeError: 'in <string>' requires string as left operand, not int",
+  "warnings": []
+ },
+ {
+  "expr": "None is None",
+  "simple": false,
+  "outcome": "= True",
+  "warnings": []
+ },
+ {
+  "expr": "() is ()",
+  "simple": false,
+  "outcome": "= True",
+  "warnings": []
+ },
+ {
+  "expr": "0 or \"\" or []",
+  "simple": false,
+  "outcome": "= []",
+  "warnings": []
+ },
+ {
+  "expr": "1 and 0 or 2",
+  "simple": false,
+  "outcome": "= 2",
+  "warnings": []
+ },
+ {
+  "expr": "not []",
+  "simple": false,
+  "outcome": "= True",
+  "warnings": []
+ },
+ {
+  "expr": "x if x else \"empty\"",
+  "simple": false,
+  "outcome": "= [1, 2]",
+  "warnings": []
+ },
+ {
+  "expr": "[1, 2, 3][1:]",
+  "simple": false,
+  "outcome": "= [2, 3]",
+  "warnings": []
+ },
+ {
+  "expr": "{1: \"a\", 1.0: \"b\", True: \"c\"}",
+  "simple": false,
+  "outcome": "= {1: 'c'}",
+  "warnings": []
+ },
+ {
+  "expr": "{33, 1, 65, 9}",
+  "simple": false,
+  "outcome": "= {65, 33, 1, 9}",
+  "warnings": []
+ },
+ {
+  "expr": "{100, 200, 300, 400, 500}.copy()",
+  "simple": false,
+  "outcome": "= {400, 100, 500, 200, 300}",
+  "warnings": []
+ },
+ {
+  "expr": "{1, 2, 3} - {2}",
+  "simple": false,
+  "outcome": "= {1, 3}",
+  "warnings": []
+ },
+ {
+  "expr": "[x * 2 for x in [1, 2, 3] if x > 1]",
+  "simple": false,
+  "outcome": "= [4, 6]",
+  "warnings": []
+ },
+ {
+  "expr": "{k: v for k, v in [(\"a\", 1), (\"b\", 2)]}",
+  "simple": false,
+  "outcome": "= {'a': 1, 'b': 2}",
+  "warnings": []
+ },
+ {
+  "expr": "(x for x in \"ab\")",
+  "simple": false,
+  "outcome": "= ['a', 'b']",
+  "warnings": []
+ },
+ {
+  "expr": "{x for x in [1]}",
+  "simple": false,
+  "outcome": "! FeatureNotAvailable: Sorry, SetComp is not available in this evaluator",
+  "warnings": []
+ },
+ {
+  "expr": "[a for a, b in [(1, 2, 3)]]",
+  "simple": false,
+  "outcome": "= [1]",
+  "warnings": []
+ },
+ {
+  "expr": "[a for *a, b in [(1, 2)]]",
+  "simple": false,
+  "outcome": "! AttributeError: 'Starred' object has no attribute 'elts'",
+  "warnings": []
+ },
+ {
+  "expr": "{a: b}",
+  "simple": false,
+  "outcome": "! NameNotDefined: 'b' is not defined for expression '{a: b}'",
+  "warnings": []
+ },
+ {
+  "expr": "{**[(1, 2)]}",
+  "simple": false,
+  "outcome": "= {1: 2}",
+  "warnings": []
+ },
+ {
+  "expr": "[*\"ab\", *x]",
+  "simple": false,
+  "outcome": "= ['a', 'b', 1, 2]",
+  "warnings": []
+ },
+ {
+  "expr": "sorted([3, 1, 2], reverse=True)",
+  "simple": false,
+  "outcome": "= [3, 2, 1]",
+  "warnings": []
+ },
+ {
+  "expr": "sum([1, 2, 3])",
+  "simple": false,
+  "outcome": "= 6",
+  "warnings": []
+ },
+ {
+  "expr": "max([])",
+  "simple": false,
+  "outcome": "! ValueError: max() iterable argument is empty",
+  "warnings": []
+ },
+ {
+  "expr": "len(x)",
+  "simple": false,
+  "outcome": "= 2",
+  "warnings": []
+ },
+ {
+  "expr": "abs(-2, 3)",
+  "simple": false,
+  "outcome": "! TypeError: abs() takes exactly one argument (2 given)",
+  "warnings": []
+ },
+ {
+  "expr": "x",
+  "simple": true,
+  "outcome": "= [1, 2]",
+  "warnings": []
+ },
+ {
+  "expr": "missing",
+  "simple": false,
+  "outcome": "! NameNotDefined: 'missing' is not defined for expression 'missing'",
+  "warnings": []
+ },
+ {
+  "expr": "x.append",
+  "simple": false,
+  "outcome": "= <built-in method append of list object at 0xffff7f4d5a00>",
+  "warnings": []
+ },
+ {
+  "expr": "d.key",
+  "simple": true,
+  "outcome": "= 'value'",
+  "warnings": []
+ },
+ {
+  "expr": "d.nothing",
+  "simple": false,
+  "outcome": "! AttributeDoesNotExist: Attribute 'nothing' does not exist in expression 'd.nothing'",
+  "warnings": []
+ },
+ {
+  "expr": "x.__class__",
+  "simple": false,
+  "outcome": "! FeatureNotAvailable: Sorry, access to __attributes  or func_ attributes is not available. (__class__)",
+  "warnings": []
+ },
+ {
+  "expr": "\"a\".format",
+  "simple": false,
+  "outcome": "! FeatureNotAvailable: Sorry, this method is not available. (format)",
+  "warnings": []
+ },
+ {
+  "expr": "len.func_name",
+  "simple": false,
+  "outcome": "! FeatureNotAvailable: Sorry, access to __attributes  or func_ attributes is not available. (func_name)",
+  "warnings": []
+ },
+ {
+  "expr": "f(1)(2)",
+  "simple": false,
+  "outcome": "! FeatureNotAvailable: Lambda Functions not implemented",
+  "warnings": []
+ },
+ {
+  "expr": "nope()",
+  "simple": false,
+  "outcome": "! FunctionNotDefined: Function 'nope' not defined, for expression 'nope()'.",
+  "warnings": []
+ },
+ {
+  "expr": "len(**{\"a\": 1})",
+  "simple": false,
+  "outcome": "! TypeError: keywords must be strings",
+  "warnings": []
+ },
+ {
+  "expr": "len(*x)",
+  "simple": false,
+  "outcome": "! FeatureNotAvailable: Sorry, Starred is not available in this evaluator",
+  "warnings": []
+ },
+ {
+  "expr": "int | str",
+  "simple": false,
+  "outcome": "= int | str",
+  "warnings": []
+ },
+ {
+  "expr": "m.sqrt(2)",
+  "simple": false,
+  "outcome": "= 1.4142135623730951",
+  "warnings": []
+ },
+ {
+  "expr": "m.floor(-2.5)",
+  "simple": false,
+  "outcome": "= -3",
+  "warnings": []
+ },
+ {
+  "expr": "m.sqrt(-1)",
+  "simple": false,
+  "outcome": "! ValueError: math domain error",
+  "warnings": []
+ },
+ {
+  "expr": "m.__name__",
+  "simple": false,
+  "outcome": "! FeatureNotAvailable: Sorry, access to __attributes  or func_ attributes is not available. (__name__)",
+  "warnings": []
+ },
+ {
+  "expr": "m.nope",
+  "simple": false,
+  "outcome": "! AttributeDoesNotExist: Attribute 'nope' does not exist in expression 'm.nope'",
+  "warnings": []
+ },
+ {
+  "expr": "x = 1",
+  "simple": false,
+  "outcome": "= 1",
+  "warnings": [
+   "AssignmentAttempted: Assignment (x = 1) attempted, but this is ignored"
+  ]
+ },
+ {
+  "expr": "1; 2",
+  "simple": false,
+  "outcome": "= 1",
+  "warnings": [
+   "MultipleExpressions: '1; 2' contains multiple expressions. Only the first will be used."
+  ]
+ },
+ {
+  "expr": "",
+  "simple": false,
+  "outcome": "! InvalidExpression: Sorry, cannot evaluate empty string",
+  "warnings": []
+ },
+ {
+  "expr": "# comment",
+  "simple": false,
+  "outcome": "! InvalidExpression: Sorry, cannot evaluate empty string",
+  "warnings": []
+ },
+ {
+  "expr": "pass",
+  "simple": false,
+  "outcome": "! FeatureNotAvailable: Sorry, Pass is not available in this evaluator",
+  "warnings": []
+ },
+ {
+  "expr": "import os",
+  "simple": false,
+  "outcome": "! FeatureNotAvailable: Sorry, 'import' is not allowed.",
+  "warnings": []
+ },
+ {
+  "expr": "lambda: 1",
+  "simple": false,
+  "outcome": "! FeatureNotAvailable: Sorry, Lambda is not available in this evaluator",
+  "warnings": []
+ },
+ {
+  "expr": "(y := 1)",
+  "simple": false,
+  "outcome": "! FeatureNotAvailable: Sorry, NamedExpr is not available in this evaluator",
+  "warnings": []
+ },
+ {
+  "expr": "del x",
+  "simple": false,
+  "outcome": "! FeatureNotAvailable: Sorry, Delete is not available in this evaluator",
+  "warnings": []
+ },
+ {
+  "expr": "(1 + 2",
+  "simple": false,
+  "outcome": "! SyntaxError: '(' was never closed (<unknown>, line 1)",
+  "warnings": []
+ },
+ {
+  "expr": "1 +",
+  "simple": false,
+  "outcome": "! SyntaxError: invalid syntax (<unknown>, line 1)",
+  "warnings": []
+ },
+ {
+  "expr": "f(a b)",
+  "simple": false,
+  "outcome": "! SyntaxError: invalid syntax. Perhaps you forgot a comma? (<unknown>, line 1)",
+  "warnings": []
+ },
+ {
+  "expr": "1 = 2",
+  "simple": false,
+  "outcome": "! SyntaxError: cannot assign to literal here. Maybe you meant '==' instead of '='? (<unknown>, line 1)",
+  "warnings": []
+ },
+ {
+  "expr": "09",
+  "simple": false,
+  "outcome": "! SyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 1)",
+  "warnings": []
+ },
+ {
+  "expr": "'abc",
+  "simple": false,
+  "outcome": "! SyntaxError: unterminated string literal (detected at line 1) (<unknown>, line 1)",
+  "warnings": []
+ },
+ {
+  "expr": "if x:",
+  "simple": false,
+  "outcome": "! IndentationError: expected an indented block after 'if' statement on line 1 (<unknown>, line 1)",
+  "warnings": []
+ }
+]
