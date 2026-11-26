@@ -9,6 +9,7 @@
 package py
 
 import (
+	"os"
 	"strings"
 
 	"github.com/danthedeckie/simpleeval/internal/textutil"
@@ -264,14 +265,7 @@ func initExtraBuiltins() {
 			}
 			return v, nil
 		},
-		"print": func(args []Value, kw *dictV) (Value, error) {
-			for _, a := range args {
-				if _, err := pyStr(a); err != nil {
-					return nil, err
-				}
-			}
-			return none, nil
-		},
+		"print": builtinPrint,
 	}
 	for name, fn := range extra {
 		builtinsTable[name] = newBuiltin(name, fn)
@@ -449,4 +443,68 @@ func refusedBuiltin(name, why string) func(args []Value, kw *dictV) (Value, erro
 	return func(args []Value, kw *dictV) (Value, error) {
 		return nil, newPyErr("RuntimeError", name+"() is refused: "+why)
 	}
+}
+
+// builtinPrint is print(*objects, sep=' ', end='\n', file=None, flush=False):
+// it writes str() of each object, separated by sep and followed by end, to
+// standard output, or passes each piece to file.write when a file is given.
+func builtinPrint(args []Value, kw *dictV) (Value, error) {
+	sep, end := " ", "\n"
+	file := none
+	if kw != nil {
+		for i, k := range kw.keys {
+			ks, _ := k.(strV)
+			v := kw.vals[i]
+			switch ks {
+			case "sep", "end":
+				switch t := v.(type) {
+				case noneV:
+				case strV:
+					if ks == "sep" {
+						sep = string(t)
+					} else {
+						end = string(t)
+					}
+				default:
+					return nil, typeErr("%s must be None or a string, not %s", ks, v.pyType())
+				}
+			case "file":
+				file = v
+			case "flush":
+				if _, err := truthy(v); err != nil {
+					return nil, err
+				}
+			default:
+				return nil, typeErr("'%s' is an invalid keyword argument for print()", ks)
+			}
+		}
+	}
+	pieces := make([]string, 0, 2*len(args)+1)
+	for i, a := range args {
+		if i > 0 {
+			pieces = append(pieces, sep)
+		}
+		s, err := pyStr(a)
+		if err != nil {
+			return nil, err
+		}
+		pieces = append(pieces, s)
+	}
+	pieces = append(pieces, end)
+	if _, ok := file.(noneV); ok {
+		if _, err := os.Stdout.WriteString(strings.Join(pieces, "")); err != nil {
+			return nil, newPyErr("OSError", err.Error())
+		}
+		return none, nil
+	}
+	write, err := pyGetattr(file, "write")
+	if err != nil {
+		return nil, err
+	}
+	for _, piece := range pieces {
+		if _, err := callValue(write, []Value{strV(piece)}, nil); err != nil {
+			return nil, err
+		}
+	}
+	return none, nil
 }

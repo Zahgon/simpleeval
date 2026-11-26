@@ -11,6 +11,8 @@ package py
 import (
 	"math"
 	"math/big"
+
+	"github.com/danthedeckie/simpleeval/internal/textutil"
 )
 
 func init() {
@@ -190,13 +192,10 @@ func mathRound(name string, fn func(float64) float64) func(args []Value, kw *dic
 }
 
 func floatToInt(f float64) (Value, error) {
-	if math.IsInf(f, 0) {
-		return nil, newPyErr("OverflowError", "cannot convert float infinity to integer")
+	i, err := textutil.FloatToInt(f)
+	if err != nil {
+		return nil, err
 	}
-	if math.IsNaN(f) {
-		return nil, valueErr("cannot convert float NaN to integer")
-	}
-	i, _ := big.NewFloat(f).Int(nil)
 	return mkBig(i), nil
 }
 

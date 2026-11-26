@@ -80,18 +80,14 @@ func operatorAttrs() []moduleAttr {
 			if err != nil {
 				return nil, err
 			}
-			for i, it := range items {
-				eq := sameObject(it, args[1])
-				if !eq {
-					if eq, err = pyEq(it, args[1]); err != nil {
-						return nil, err
-					}
-				}
-				if eq {
-					return mkInt(int64(i)), nil
-				}
+			i, err := methodsSeqFind(items, args[1], 0, len(items))
+			if err != nil {
+				return nil, err
 			}
-			return nil, valueErr("sequence.index(x): x not in sequence")
+			if i < 0 {
+				return nil, valueErr("sequence.index(x): x not in sequence")
+			}
+			return mkInt(int64(i)), nil
 		},
 		"call": func(args []Value, kw *dictV) (Value, error) {
 			if len(args) == 0 {

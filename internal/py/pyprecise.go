@@ -65,27 +65,7 @@ func bigExpOf(t *big.Float) float64 {
 	if t.Cmp(bf(-746)) < 0 {
 		return 0
 	}
-	kf := new(big.Float).SetPrec(precBits).Quo(t, bigLn2)
-	k, _ := kf.Int64()
-	r := new(big.Float).SetPrec(precBits).Sub(t, new(big.Float).SetPrec(precBits).Mul(bigLn2, new(big.Float).SetPrec(precBits).SetInt64(k)))
-	// exp(r) with |r| < 1 by Taylor series on r/2^16, then squared 16 times.
-	const halvings = 16
-	r.SetMantExp(r, -halvings)
-	sum := new(big.Float).SetPrec(precBits).SetInt64(1)
-	term := new(big.Float).SetPrec(precBits).SetInt64(1)
-	for n := 1; n < 60; n++ {
-		term.Mul(term, r)
-		term.Quo(term, new(big.Float).SetPrec(precBits).SetInt64(int64(n)))
-		if term.Sign() == 0 {
-			break
-		}
-		sum.Add(sum, term)
-	}
-	for i := 0; i < halvings; i++ {
-		sum.Mul(sum, sum)
-	}
-	sum.SetMantExp(sum, int(k))
-	f, _ := sum.Float64()
+	f, _ := bigExpFull(t).Float64()
 	return f
 }
 

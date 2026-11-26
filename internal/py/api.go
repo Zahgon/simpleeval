@@ -205,15 +205,6 @@ func (e *Error) Error() string { return e.Message }
 // library exception class with the given name.
 func (e *Error) IsInstance(class string) bool { return excIsInstance(e.exc, class) }
 
-// Attr is an attribute of the exception object, nil when it has none.
-func (e *Error) Attr(name string) Value {
-	v, err := e.exc.getAttr(name)
-	if err != nil {
-		return nil
-	}
-	return v
-}
-
 // ErrorIs reports whether err is a Python exception that is an instance of
 // the class named class, as `except class:` tests it.
 func ErrorIs(err error, class string) bool {

@@ -28,10 +28,6 @@ func builtinAttr(v Value, name string) (Value, bool) {
 		}
 		if m, ok := methodsStr[name]; ok {
 			s := string(x)
-			if name == "format" {
-				// The replacement fields format the arguments themselves.
-				return methodsBound(v, name, func(args []Value, kw *dictV) (Value, error) { return m("str", s, args, kw) }), true
-			}
 			return methodsBound(v, name, func(args []Value, kw *dictV) (Value, error) { return m("str", s, args, kw) }), true
 		}
 	case *listV:
