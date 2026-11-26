@@ -9,6 +9,7 @@
 package py
 
 import (
+	"github.com/danthedeckie/simpleeval/internal/codecs"
 	"github.com/danthedeckie/simpleeval/internal/textutil"
 	"math"
 	"math/big"
@@ -298,7 +299,7 @@ func (c *pctFormatter) convert(a *pctArg) (s string, done bool, err error) {
 			if !ok {
 				return "", false, typeErr("%%b requires a bytes-like object, or an object that implements __bytes__, not '%s'", typeName(v))
 			}
-			return latin1(b), false, nil
+			return codecs.DecodeLatin1([]byte(b)), false, nil
 		case 'r', 'a':
 			s, err = fmtASCII(v)
 			return s, false, err
@@ -427,15 +428,6 @@ func bytesLike(v Value) (string, bool) {
 		return string(x.b), true
 	}
 	return "", false
-}
-
-// latin1 holds each byte of b as the character of the same code point.
-func latin1(b string) string {
-	r := make([]rune, len(b))
-	for i := 0; i < len(b); i++ {
-		r[i] = rune(b[i])
-	}
-	return string(r)
 }
 
 // byteConverter is the argument of bytes formatting's %c: a single byte, or

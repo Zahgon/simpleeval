@@ -878,17 +878,7 @@ func toSlice(v Value) ([]Value, error) {
 	if err != nil {
 		return nil, err
 	}
-	var out []Value
-	for {
-		item, ok, err := it.next()
-		if err != nil {
-			return nil, err
-		}
-		if !ok {
-			return out, nil
-		}
-		out = append(out, item)
-	}
+	return methodsIterAll(it)
 }
 
 // pyLen is Python's len().
