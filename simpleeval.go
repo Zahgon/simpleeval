@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/danthedeckie/simpleeval/internal/py"
+	"github.com/danthedeckie/simpleeval/internal/pyexc"
 )
 
 // The limits. Like the original's module globals, they are read each time
@@ -219,10 +220,11 @@ func pyCompare(op string, a, b Value) (bool, error) {
 	return py.Truth(r)
 }
 
-// hasLen is hasattr(v, "__len__").
-func hasLen(v Value) bool {
-	ok, err := py.HasAttr(v, "__len__")
-	return err == nil && ok
+// hasLen is hasattr(v, "__len__"): false when v has no __len__ attribute;
+// any other error raised while looking the attribute up is returned, as
+// hasattr lets it propagate.
+func hasLen(v Value) (bool, error) {
+	return py.HasAttr(v, "__len__")
 }
 
 // lenOf is len(v) as a Python int.
@@ -280,7 +282,11 @@ func safeMult(args []Value, kwargs []Keyword) (Value, error) {
 	a, b := args[0], args[1]
 	for _, pair := range [][2]Value{{a, b}, {b, a}} {
 		seq, times := pair[0], pair[1]
-		if !hasLen(seq) {
+		sized, err := hasLen(seq)
+		if err != nil {
+			return nil, err
+		}
+		if !sized {
 			continue
 		}
 		n, err := lenOf(seq)
@@ -308,7 +314,16 @@ func safeAdd(args []Value, kwargs []Keyword) (Value, error) {
 		return nil, err
 	}
 	a, b := args[0], args[1]
-	if hasLen(a) && hasLen(b) {
+	sized, err := hasLen(a)
+	if err != nil {
+		return nil, err
+	}
+	if sized {
+		if sized, err = hasLen(b); err != nil {
+			return nil, err
+		}
+	}
+	if sized {
 		la, err := lenOf(a)
 		if err != nil {
 			return nil, err
@@ -377,7 +392,7 @@ func arity(name string, params []string, args []Value, kwargs []Keyword) error {
 	for i := range args {
 		if i >= len(params) {
 			return py.Raise("TypeError", py.String(name+"() takes "+itoa(len(params))+" positional argument"+
-				plural(len(params))+" but "+itoa(len(args))+" were given"))
+				pyexc.Plural(len(params))+" but "+itoa(len(args))+" were given"))
 		}
 		bound[i] = true
 	}
@@ -403,16 +418,9 @@ func arity(name string, params []string, args []Value, kwargs []Keyword) error {
 			list = strings.Join(missing[:len(missing)-1], ", ") + ", and " + missing[len(missing)-1]
 		}
 		return py.Raise("TypeError", py.String(name+"() missing "+itoa(len(missing))+" required positional argument"+
-			plural(len(missing))+": "+list))
+			pyexc.Plural(len(missing))+": "+list))
 	}
 	return nil
-}
-
-func plural(n int) string {
-	if n == 1 {
-		return ""
-	}
-	return "s"
 }
 
 func itoa(n int) string { return strconv.Itoa(n) }
@@ -671,7 +679,11 @@ func (s *SimpleEval) evalImport(py.Node) (Value, error) {
 
 func (s *SimpleEval) evalConstant(n py.Node) (Value, error) {
 	v := n.Constant()
-	if hasLen(v) {
+	sized, err := hasLen(v)
+	if err != nil {
+		return nil, err
+	}
+	if sized {
 		length, err := py.Len(v)
 		if err != nil {
 			return nil, err

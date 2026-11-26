@@ -281,13 +281,20 @@ func initExtraBuiltins() {
 	builtinsTable["__name__"] = strV("builtins")
 	builtinsTable["__package__"] = strV("")
 	builtinsTable["__debug__"] = trueV
-	// The builtins that run code or reach the interpreter's namespaces exist
-	// as values (an evaluator refuses them by identity) but have no frames to
-	// act on here.
-	for _, name := range []string{"exec", "eval", "globals", "locals", "compile", "breakpoint", "input", "open",
-		"__import__", "vars", "dir", "super"} {
+	// The builtins that run code, read the caller's namespaces or open files
+	// exist only as values: simpleeval refuses each of them by identity
+	// (DisallowFunctions) before an expression could call it, and calling one
+	// directly is refused with the reason.
+	for name, why := range map[string]string{
+		"exec":    "this library evaluates expressions only through its own evaluator",
+		"eval":    "this library evaluates expressions only through its own evaluator",
+		"compile": "this library evaluates expressions only through its own evaluator",
+		"globals": "an evaluated expression has no calling Python frame",
+		"locals":  "an evaluated expression has no calling Python frame",
+		"open":    "this library does not open files",
+	} {
 		if _, ok := builtinsTable[name]; !ok {
-			builtinsTable[name] = newBuiltin(name, unavailableBuiltin(name))
+			builtinsTable[name] = newBuiltin(name, refusedBuiltin(name, why))
 		}
 	}
 	builtinsTable["__doc__"] = strV(builtinsDoc)
@@ -314,12 +321,11 @@ func initExtraBuiltins() {
 				return nil, newExc("SystemExit", []Value{code})
 			}
 		case "help":
-			// The interactive help reads from a terminal, which an
-			// expression has none of.
+			// The interactive help reads from a terminal; simpleeval refuses
+			// help by identity, and a direct call is refused with the reason.
 			o.Class = "_Helper"
-			o.Call = func([]Value, []Keyword) (Value, error) {
-				return nil, newPyErr("NotImplementedError", "help() needs an interactive terminal")
-			}
+			refuse := refusedBuiltin("help", "an evaluated expression has no interactive terminal")
+			o.Call = func([]Value, []Keyword) (Value, error) { return refuse(nil, nil) }
 		}
 		builtinsTable[name] = o
 	}
@@ -436,9 +442,11 @@ var comparisonOperators = map[string]string{
 	"IsNot": "is not", "In": "in", "NotIn": "not in",
 }
 
-// unavailableBuiltin is the body of a builtin that needs a running frame.
-func unavailableBuiltin(name string) func(args []Value, kw *dictV) (Value, error) {
+// refusedBuiltin is the body of a builtin this library keeps only so that an
+// evaluator can refuse it by identity: calling it raises RuntimeError naming
+// the builtin and why it is refused.
+func refusedBuiltin(name, why string) func(args []Value, kw *dictV) (Value, error) {
 	return func(args []Value, kw *dictV) (Value, error) {
-		return nil, newPyErr("NotImplementedError", name+"() needs a running Python frame")
+		return nil, newPyErr("RuntimeError", name+"() is refused: "+why)
 	}
 }

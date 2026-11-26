@@ -70,19 +70,7 @@ func operatorAttrs() []moduleAttr {
 			if err != nil {
 				return nil, err
 			}
-			n := int64(0)
-			for _, it := range items {
-				eq := sameObject(it, args[1])
-				if !eq {
-					if eq, err = pyEq(it, args[1]); err != nil {
-						return nil, err
-					}
-				}
-				if eq {
-					n++
-				}
-			}
-			return mkInt(n), nil
+			return methodsSeqCount(items, args[1])
 		},
 		"indexOf": func(args []Value, kw *dictV) (Value, error) {
 			if err := posOnly("indexOf", 2, 2, args, kw); err != nil {
@@ -254,12 +242,12 @@ func osAttrs() []moduleAttr {
 	// posix_spawnp; os.py defines popen and the other exec and spawn
 	// functions in Python.
 	for _, name := range []string{"system", "execv", "execve", "posix_spawn", "posix_spawnp"} {
-		out = append(out, moduleAttr{name, newBuiltin(name, unavailableBuiltin(name))})
+		out = append(out, moduleAttr{name, newBuiltin(name, refusedBuiltin(name, "this library does not start other programs"))})
 	}
 	for _, name := range []string{"popen", "execl", "execle", "execlp", "execlpe", "execvp", "execvpe", "spawnl",
 		"spawnle", "spawnlp", "spawnlpe", "spawnv", "spawnve", "spawnvp", "spawnvpe"} {
 		out = append(out, moduleAttr{name, &callable{name: name, typ: "function", qual: name,
-			fn: unavailableBuiltin(name)}})
+			fn: refusedBuiltin(name, "this library does not start other programs")}})
 	}
 	return out
 }
